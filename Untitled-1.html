@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ciel étoilé interactif</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #000;
+  }
+
+  canvas {
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const stars = [];
+  const earth = new Image();
+  earth.src = 'earth.jpg'; // Charger l'image de la Terre
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  function generateStars() {
+    for (let i = 0; i < 300; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const radius = Math.random() * 3 + 1;
+      const speed = Math.random() * 0.5 + 0.1;
+      const color = getRandomColor();
+      stars.push({ x, y, radius, speed, color });
+    }
+  }
+
+  function drawStar(star) {
+    ctx.beginPath();
+    ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+    ctx.fillStyle = star.color;
+    ctx.fill();
+    ctx.closePath();
+  }
+
+  function animateStars() {
+    requestAnimationFrame(animateStars);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    stars.forEach(star => {
+      drawStar(star);
+      star.y += star.speed;
+
+      if (star.y > canvas.height) {
+        star.y = 0;
+        star.x = Math.random() * canvas.width;
+      }
+    });
+
+    // Dessiner la Terre au centre de l'écran
+    ctx.drawImage(earth, canvas.width / 2 - earth.width / 2, canvas.height / 2 - earth.height / 2);
+  }
+
+  function getRandomColor() {
+    const r = Math.floor(Math.random() * 256);
+    const g = Math.floor(Math.random() * 256);
+    const b = Math.floor(Math.random() * 256);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  canvas.addEventListener('click', function(event) {
+    const explosionX = event.clientX;
+    const explosionY = event.clientY;
+    createExplosion(explosionX, explosionY);
+  });
+
+  function createExplosion(x, y) {
+    stars.forEach(star => {
+      const angle = Math.atan2(y - star.y, x - star.x);
+      const distance = Math.sqrt((x - star.x) ** 2 + (y - star.y) ** 2);
+      const speed = Math.random() * 5 + 1;
+      star.speedX = Math.cos(angle) * speed;
+      star.speedY = Math.sin(angle) * speed;
+      star.distance = distance;
+    });
+
+    setTimeout(() => {
+      stars.forEach(star => {
+        delete star.speedX;
+        delete star.speedY;
+        delete star.distance;
+      });
+    }, 1000);
+  }
+
+  function updateCanvasSize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    stars.length = 0; // Clear existing stars
+    generateStars(); // Regenerate stars with new canvas size
+  }
+
+  window.addEventListener('resize', updateCanvasSize);
+
+  canvas.addEventListener('mousemove', function(event) {
+    const mouseX = event.clientX;
+    const mouseY = event.clientY;
+
+    stars.forEach(star => {
+      const dx = mouseX - star.x;
+      const dy = mouseY - star.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const maxDistance = 50;
+      const speed = 1;
+
+      if (distance < maxDistance) {
+        const angle = Math.atan2(dy, dx);
+        star.speedX = Math.cos(angle) * speed;
+        star.speedY = Math.sin(angle) * speed;
+      } else {
+        delete star.speedX;
+        delete star.speedY;
+      }
+    });
+  });
+
+  generateStars();
+  animateStars();
+</script>
+
+</body>
+</html>
